@@ -1,4 +1,4 @@
-import react, { useState, useEffect, useRef } from 'react';
+import react, { useState, useEffect, useRef,createRef } from 'react';
 import { interval, fromEvent } from 'rxjs';
 import { map, buffer, filter, debounceTime } from 'rxjs/operators';
 import './App.css';
@@ -14,7 +14,8 @@ const App = () => {
   const [seconds, setSeconds] = useState(0);
   const [status, setStatus] = useState(TIMER_STATUS.STOP);
 
-  const waitBtn = useRef(null);
+  const waitBtn = useRef('#wait');
+
 
   useEffect(()=>{
 
@@ -35,6 +36,7 @@ const App = () => {
     const handleStartStop = () => {
       if(status === TIMER_STATUS.STOP||status === TIMER_STATUS.WAIT){
       setStatus(TIMER_STATUS.START);
+
       }else{
       setStatus(TIMER_STATUS.STOP);
       setSeconds(0);
@@ -45,20 +47,21 @@ const App = () => {
   //(время между нажатиями не более 300 мс!)
   //таймер должен прекратить отсчет времени;
   //если после него нажать старт, то возобновляется отсчет.
-  const handleWait = () => {
-
-    const click = fromEvent(waitBtn.current, 'click');
-    const doubleClick = click
-    .pipe(
-      buffer(click.pipe(debounceTime(300))),
-      map(clicks => clicks.length),
-      filter(clicksLength => clicksLength === 2)
-    );
-    const subscription = doubleClick.subscribe(_ => {
-      setStatus(TIMER_STATUS.WAIT);    
-    });
-    return () => subscription.unsubscribe();
-  };
+ 
+    useEffect(()=>{
+      const click = fromEvent(waitBtn.current, 'click');
+      const doubleClick = click
+      .pipe(
+        buffer(click.pipe(debounceTime(300))),
+        map(clicks => clicks.length),
+        filter(clicksLength => clicksLength === 2)
+      );
+      const subscription = doubleClick.subscribe(_ => {
+        setStatus(TIMER_STATUS.WAIT);    
+      });
+      
+      return () => subscription.unsubscribe();
+    },[]);
 
   // сброс секундомера  на 0.
   //Обнуляет секундомер и снова начинает отсчет.
@@ -78,7 +81,7 @@ const App = () => {
         <button type="button" onClick={handleStartStop}>
           {status !== TIMER_STATUS.START ? "Start" : "Stop"}
         </button>
-        <button ref={waitBtn} type="button" onClick={handleWait}>
+        <button id="wait" ref={waitBtn} type="button" >
           Wait
         </button>
         <button type="button" onClick={handleReset}>
